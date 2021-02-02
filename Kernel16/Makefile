@@ -1,0 +1,12 @@
+BOOTLOADER = BootLoader.asm
+KERNEL16FILE = Kernel16.asm
+KERNEL16FOLDER = Kernel16
+TEMPRORYFOLDER = Temprory
+
+clean:
+	rm -rf ../$(TEMPRORYFOLDER)/$(KERNEL16FOLDER)
+
+all:
+	mkdir ../$(TEMPRORYFOLDER)/$(KERNEL16FOLDER)
+	nasm $(BOOTLOADER) -f bin -o ../$(TEMPRORYFOLDER)/$(KERNEL16FOLDER)/BootLoader.bin
+	nasm $(KERNEL16FILE) -f bin -o ../$(TEMPRORYFOLDER)/$(KERNEL16FOLDER)/Kernel16.bin
