@@ -4,132 +4,134 @@
 #include <TextScreen.hpp>
 #include <string.hpp>
 
+/*
+ * This code is made out of the tear.
+ * If You are going to copy-paste this code,
+ * please, just please don't delete this message.
+ * you can do whatever you want with this code but, 
+ * don't delete this message.
+ *
+ * 2021.2.9, Juha3141.
+*/
+
 using namespace System;
 
-static Memory::Management MemoryManager;
+static Memory::Management MemoryManager[2];
+static Memory::E820 *MemoryMap = (Memory::E820*)E820_STARTADDRESS;
 
 bool Memory::Initialize(void) {
-    unsigned long i;
-    unsigned long *MemoryLocation;
-    unsigned long TempBuffer;
-    MemoryLocation = (unsigned long*)MEMORY_STARTADDRESS;
+    unsigned long i = 0;
+    unsigned long j = 0;
+    unsigned long TotalMemory;
+    
     __asm__ ("cli");
-    while(1) {
-        TempBuffer = (*MemoryLocation);
-        (*MemoryLocation) = 0x12345678AABBCCDD;
-        if(((unsigned long)(*MemoryLocation)) != 0x12345678AABBCCDD) {
+    while(i += 1) {
+        if(MemoryMap[i].Type == 1) {
+            if(MemoryMap[i].BaseAddress == MEMORY_USABLE_STARTADDRESS) {
+                TotalMemory += MemoryManager[j++].Initialize(MEMORY_STARTADDRESS , MemoryMap[i].BaseAddress+MemoryMap[i].Length);
+                MemoryManager[j].Usable = true;
+                j += 1;
+            }
+            if(MemoryMap[i].BaseAddress > MEMORY_USABLE_STARTADDRESS) {
+                TotalMemory += MemoryManager[j].Initialize(MemoryMap[i].BaseAddress , MemoryMap[i].BaseAddress+MemoryMap[i].Length);
+                MemoryManager[j].Usable = true;
+                j += 1;
+            }
+        }
+        if(MemoryMap[i].Length == (unsigned long)0x00) {
             break;
         }
-        (*MemoryLocation) = TempBuffer;
-        MemoryLocation += MEMORY_BLOCKSIZE;
     }
-    MemoryManager.Blocks = (Memory::BLOCK*)MEMORY_STARTADDRESS;
-    MemoryManager.TotalSize = (unsigned long)MemoryLocation-MEMORY_STARTADDRESS;
-    MemoryManager.StartAddress = MEMORY_STARTADDRESS+(MemoryManager.TotalSize/MEMORY_BLOCKSIZE);
-    MemoryManager.TotalSize -= (MemoryManager.TotalSize/MEMORY_BLOCKSIZE);
-    MemoryManager.BlockCount = (unsigned long)(MemoryManager.TotalSize/MEMORY_BLOCKSIZE);
-    MemoryManager.UsingBlock = 0x00;
-    for(i = 0; i < (unsigned long)(MemoryManager.TotalSize/MEMORY_BLOCKSIZE); i++) {
-        MemoryManager.Blocks[i].Start = 0x00;
-        MemoryManager.Blocks[i].Allocated = false;
-        MemoryManager.Blocks[i].BlockCount = 0x00;
+
+    TotalMemory -= MEMORY_STARTADDRESS;
+    TextScreen::printf("Total memory : %dMB\n" , TotalMemory/1024/1024);
+
+    while(1) {
+        ;
     }
     __asm__ ("sti");
     return true;
 }
 
-bool Memory::Allocated(void *Address) {
-    unsigned long i;
-    unsigned long BlockAddress;
-    __asm__ ("cli");
-    BlockAddress = (unsigned long)((((unsigned long)Address)-MemoryManager.StartAddress)/(MEMORY_BLOCKSIZE));
-    if((MemoryManager.Blocks[BlockAddress].Start == false) && (MemoryManager.Blocks[BlockAddress].Allocated == true)) {
-        __asm__ ("sti");
-        return false;
+static unsigned long GetBlockMode(unsigned long StartAddress , unsigned long EndAddress) {
+    const static unsigned long MB = 1024*1024;
+    unsigned long MemorySize = EndAddress-StartAddress;
+    if((MemorySize > 0) && (MemorySize <= 1024*MB)) {
+        return MEMORY_BLOCK_256B;
     }
-    __asm__ ("sti");
-    return true;
+    if((MemorySize > 1024*MB) && (MemorySize <= 2048*MB)) {
+        return MEMORY_BLOCK_512B;
+    }
+    if((MemorySize > 2048*MB) && (MemorySize <= 4096*MB)) {
+        return MEMORY_BLOCK_1KB;
+    }
+    if((MemorySize > 4096*MB) && (MemorySize <= 8192*MB)) {
+        return MEMORY_BLOCK_2KB;
+    }
+    if(MemorySize > 8192*MB) {
+        return MEMORY_BLOCK_4KB;
+    }
+    return 0x00;
 }
+
+unsigned long Memory::Management::Initialize(unsigned long StartAddress , unsigned long EndAddress) {
+    unsigned long i;
+    unsigned long j;
+    unsigned long BlockSize = GetBlockMode(StartAddress , EndAddress);
+    this->BlockCount = (EndAddress-StartAddress)/BlockSize;
+    this->BlockStartAddress = StartAddress;
+    this->BlockEndAddress = StartAddress+(BlockCount*sizeof(BLOCK))-1;
+    this->StartAddress = StartAddress+(BlockCount*sizeof(BLOCK));
+    this->EndAddress = EndAddress;
+    this->BlockSize = BlockSize;;
+    this->Blocks = (BLOCK*)this->BlockStartAddress;
+    TextScreen::printf("Usable              : 0x%X - 0x%X\n" , this->StartAddress , this->EndAddress);
+    TextScreen::printf("Block Start Address : 0x%X - 0x%X\n" , this->BlockStartAddress , this->BlockEndAddress);
+    TextScreen::printf("Block Count         : %d\n" , this->BlockCount);
+    TextScreen::printf("Block Size          : %d\n" , this->BlockSize);
+
+    for(i = 0; i < BlockCount; i++) {
+        Blocks[i].Allocated = MEMORY_BLOCK_NOT_ALLOCATED;
+        Blocks[i].Address = (this->StartAddress+(i*BlockSize));
+    }
+    this->UsingBlockCount = 0;
+    return this->EndAddress-this->StartAddress;
+}
+
+bool Memory::Management::Allocated(void *Address) {
+    return (this->Blocks[PhysicalAddressToBlockIndex((unsigned long)Address)].Allocated == MEMORY_BLOCK_NOT_ALLOCATED) ? false : true;
+}
+
+unsigned long Memory::Management::GetTotalSize(void) {
+    return this->UsingBlockCount*this->BlockSize;
+}
+
+unsigned long Memory::Management::GetUsingBlock(void) {
+    return this->UsingBlockCount;
+}
+
+unsigned long Memory::Management::malloc(unsigned long Size) {
+    ;
+}
+
+void Memory::Management::free(void *Address) {
+    ;
+}
+
+
 
 unsigned long Memory::GetTotalSize(void) {
-    return MemoryManager.TotalSize;
+
 }
 
 unsigned long Memory::GetUsingBlock(void) {
-    return MemoryManager.UsingBlock;
+    
 }
 
 unsigned long Memory::malloc(unsigned long Size) {
-    unsigned long i;
-    int TempColor;
-    unsigned long UsingBlock;
-    unsigned long Address = MemoryManager.StartAddress;
-    unsigned long StartBlock;
-    bool Founded = false;
-    __asm__ ("cli");
-    if(Size < MEMORY_BLOCKSIZE) {
-        UsingBlock = 1;
-    }
-    else {
-        if(Size%MEMORY_BLOCKSIZE != 0x00) {
-            UsingBlock = (Size/MEMORY_BLOCKSIZE)+1;
-        }
-        else {
-            UsingBlock = Size/MEMORY_BLOCKSIZE;
-        }
-    }
-    MemoryManager.UsingBlock += UsingBlock;
-    for(i = 0; i < MemoryManager.BlockCount; i++) {
-        if(MemoryManager.Blocks[i].Allocated == false) {
-            if(MemoryManager.Blocks[i].Start == true) {
-                if(MemoryManager.Blocks[i].BlockCount < UsingBlock) {
-                    i++;
-                    continue;
-                }
-            }
-            MemoryManager.Blocks[i].Allocated = true;
-            MemoryManager.Blocks[i].Start = true;
-            MemoryManager.Blocks[i].BlockCount = UsingBlock;
-            Address = (unsigned long)(MemoryManager.StartAddress+(i*MEMORY_BLOCKSIZE));
-            Founded = true;
-            StartBlock = i;
-            break;
-        }
-    }
-    if(Founded == false) {
-        TempColor = TextScreen::GetColor();
-        TextScreen::SetColor(0x04);
-        TextScreen::printf("No more memory for you");
-        TextScreen::SetColor(TempColor);
-        __asm__ ("sti");
-        return 0x00;
-    }
-    for(i = StartBlock+1; i < StartBlock+UsingBlock; i++) {
-        MemoryManager.Blocks[i].Allocated = true;
-        MemoryManager.Blocks[i].Start = false;
-        MemoryManager.Blocks[i].BlockCount = 0;
-    }
-    __asm__ ("sti");
-    return Address;
+
 }
 
 void Memory::free(void *Address) {
-    unsigned long i;
-    unsigned long BlockAddress;
-    unsigned long BlockCount;
-    __asm__ ("cli");
-    BlockAddress = (unsigned long)((((unsigned long)Address)-MemoryManager.StartAddress)/(MEMORY_BLOCKSIZE));
-    if((MemoryManager.Blocks[BlockAddress].Start == false) && (MemoryManager.Blocks[BlockAddress].Allocated == true)) {
-        __asm__ ("sti");
-        return;
-    }
-    BlockCount = MemoryManager.Blocks[BlockAddress].BlockCount;
-    MemoryManager.UsingBlock -= BlockCount;
-    for(i = BlockAddress; i <= BlockAddress+BlockCount; i++) {
-        MemoryManager.Blocks[i].Allocated = false;
-        MemoryManager.Blocks[i].Start = false;
-        MemoryManager.Blocks[i].BlockCount = 0;
-    }
-    __asm__ ("sti");
-    return;
+    
 }

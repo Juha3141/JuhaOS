@@ -6,5 +6,6 @@
 void WritePort(unsigned short Port , unsigned char Data);
 unsigned char ReadPotr(unsigned short Port);
 void SwitchTo64BitAndJump(void);
+bool Check64BitSupported(void);
 
 #endif

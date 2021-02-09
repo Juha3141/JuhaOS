@@ -1,9 +1,8 @@
 OUTPUT_FORMAT(elf32-i386)
-ENTRY(Entry)
+ENTRY(Main32)
 SECTIONS {
-  . = 0x8000;
-  .text 0x8000 : {
-    . = ALIGN(4096);
+  . = 0x10000;
+  .text 0x10000 : {
     *(.text .stub .text.* .gnu.linkonce.t.*)
   }
   .data : {

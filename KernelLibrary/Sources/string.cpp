@@ -72,8 +72,8 @@ int strncmp(const char *FirstString , const char *SecondString) {
 	return NotEqual;
 }
 
-int atoi(const char *Buffer) {
-	int Value = 0;
+unsigned long atoi(const char *Buffer) {
+	unsigned long Value = 0;
 	int Positive = 1;
 	if(*Buffer == '-') {
 		Positive = -1;
@@ -98,8 +98,8 @@ int atoi(const char *Buffer) {
 	return Value;
 }
 
-int atol(const char *Buffer) {
-	int Value = 0;
+unsigned long atol(const char *Buffer) {
+	unsigned long Value = 0;
 	int Positive = 1;
 	if(*Buffer == '-') {
 		Positive = -1;
@@ -133,8 +133,8 @@ int atol(const char *Buffer) {
 	return Value;
 }
 
-char *itoa(int Value , char *Buffer , int Radix) {
-	int TempBuffer;
+char *itoa(unsigned long Value , char *Buffer , int Radix) {
+	unsigned long TempBuffer;
 	if(Value == 0) {
 		Buffer[0] = '0';
 		Buffer[1] = '\0';

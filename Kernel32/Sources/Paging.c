@@ -1,5 +1,11 @@
 #include <Paging.h>
 
+/* 
+ This code was inspired by mint64os
+ (I used mint64os's code, the github link is here: 
+ https://github.com/kkamagui/mint64os)
+ */
+
 void InitPML4(unsigned int PML4StartAddress) {
     unsigned int i;
     unsigned int Flag;

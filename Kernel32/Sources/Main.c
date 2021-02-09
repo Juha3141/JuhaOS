@@ -2,82 +2,87 @@
 #include <Paging.h>
 #include <Assembly.h>
 
-#define KERNEL32_STARTADDRESS 0x100000
-#define KERNEL64_REALADDRESS 0x100000+(KERNEL32_SECTORCOUNT*unsigned charS_PER_SECTOR)
 #define KERNEL64_STARTADDRESS 0x200000
+
+#define FAT_ROOTENTRYCOUNT 224
 
 #define VBEMODE 0x117
 
 #pragma pack(push , 1)
 
 typedef struct {
-    void *Start;
-    void *End;
-    char *Name;
-    unsigned int Reserved;
-}MODULE;
+    char Name[8];
+    char EXT[3];
+    unsigned char FileProperty;
+    unsigned char Reserved[10];
+    unsigned short Time;
+    unsigned short Date;
+    unsigned short ClusterStartAddress;
+    unsigned int FileSize;
+}FATROOTENTRY;
 
 typedef struct {
-    unsigned int Flags;
-    unsigned int MemoryLow;
-    unsigned int MemoryHigh;
-    unsigned int BootDrive;
-    char *CommandLine;
-    unsigned int ModulesCount;
-    MODULE *Modules;
-}MULTIBOOTINFO;
+    unsigned short DI;
+    unsigned short SI;
+    unsigned short BP;
+    unsigned short SP;
+    unsigned short BX;
+    unsigned short DX;
+    unsigned short CX;
+    unsigned short AX;
+
+    unsigned short GS;
+    unsigned short FS;
+    unsigned short ES;
+    unsigned short DS;
+    unsigned short EFlags;
+}REGISTERS;
 
 #pragma pack(pop)
 
-void SwitchTo64BitModeAndJump(void);
-unsigned int CheckMaxMemory(void);
-bool Check64BitSupported(void);
-
 void PrintString(int X , int Y , const char *Buffer);
-void LoadModule(int Number , unsigned int Address , unsigned int MultibootAddress);
+void ReadSector(int SectorNumber , unsigned char SectorCountToRead , unsigned char DriveNumber);
+FATROOTENTRY *FindFile(unsigned char *FileName);
+void ReadOneSector(int SectorNumber , unsigned char *Buffer);
 
-void Main32(unsigned long MultibootMagic , unsigned long MultibootAddress) {
-    int i = 80*25;
+void Main32(void) {
+    int i;
+    int SectorNumber;
+    int SectorCountToRead;
+    unsigned char *Kernel64Address = (unsigned char*)KERNEL64_STARTADDRESS;
     unsigned char *TextScreenBuffer = (unsigned char*)0xB8000;
-    unsigned int RAMSize;
-    char *Buffer = (char*)0xACACAC;
-    unsigned long *SaveMultibootInfo = (unsigned long*)0x12000;
-    SaveMultibootInfo[0] = MultibootMagic;
-    SaveMultibootInfo[1] = MultibootAddress;
-    while(i --> 0) {
+    REGISTERS Registers;
+    FATROOTENTRY *Kernel64;
+    for(i = 0; i < 80*25; i++) {
         *TextScreenBuffer++ = 0x00;
         *TextScreenBuffer++ = 0x07;
     }
-    if((RAMSize = CheckMaxMemory()) < 512) {
-        PrintString(0 , 0 , "RAM size is too low, min 512MB required :(");
+    Kernel64 = FindFile("KERNEL64BIN");
+    if(Kernel64 == NULL) {
+        PrintString(0 , 0 , "I can't find the Kernel.");
         while(1) {
             ;
         }
     }
-    if(Check64BitSupported() == false) {
+    SectorCountToRead = (Kernel64->FileSize/512)+((Kernel64->FileSize%512 != 0x00) ? 1 : 0);
+    SectorNumber = Kernel64->ClusterStartAddress+31;
+    
+    for(i = 0; i < SectorCountToRead; i++) {
+        ReadOneSector(SectorNumber , Kernel64Address);
+        SectorNumber += 1;
+        Kernel64Address += 0x200;
+    }
+
+    if(Check64BitSupported() == false) { 
         PrintString(0 , 0 , "64bit isn't supporting in this PC :(");
         while(1) {
             ;
         }
     }
-
-    InitPML4(0x16000);
-    LoadModule(0 , 0x200000-0x1000 , MultibootAddress);
-    LoadModule(1 , 0x300000-0x1000 , MultibootAddress);
+    InitPML4(0x12000);
     SwitchTo64BitAndJump();
     while(1) { 
         ;
-    }
-}
-
-void LoadModule(int Number , unsigned int Address , unsigned int MultibootAddress) {
-    int i = 0;
-    MULTIBOOTINFO *MultibootInfo = (MULTIBOOTINFO*)MultibootAddress;
-    unsigned char *MemoryAddress;
-    unsigned char *Buffer = (unsigned char*)Address;
-    Buffer[i] = (unsigned char)MultibootInfo->Modules[Number].Start;
-    for(MemoryAddress = MultibootInfo->Modules[Number].Start; (MemoryAddress < MultibootInfo->Modules[Number].End); MemoryAddress++) {
-        Buffer[i++] = (unsigned char)(*MemoryAddress);
     }
 }
 
@@ -91,17 +96,48 @@ void PrintString(int X , int Y , const char *Buffer) {
     }
 }
 
-unsigned int CheckMaxMemory(void) {
-    unsigned int Buffer;
-    unsigned int *MemoryLocation = (unsigned int*)KERNEL32_STARTADDRESS;
-    while(1) {
-        MemoryLocation += 4*MB;
-        Buffer = (unsigned int)MemoryLocation;
-        *MemoryLocation = 0x31415926;
-        if(*MemoryLocation != 0x31415926) {
+FATROOTENTRY *FindFile(unsigned char *FileName) {
+    int i;
+    int j;
+    bool Found;
+    FATROOTENTRY *RootEntry = (FATROOTENTRY*)0x600;
+    for(i = 0; i < FAT_ROOTENTRYCOUNT; i++) {
+        Found = true;
+        for(j = 0; j < 11; j++) {
+            if(FileName[j] != RootEntry[i].Name[j]) {
+                Found = false;
+                break;
+            }
+        }
+        if(Found == true) {
             break;
         }
-        *MemoryLocation = Buffer;
     }
-    return ((unsigned int)MemoryLocation)/MB;
+    if(Found == true) {
+        return &(RootEntry[i]);
+    }
+    else {
+        return (FATROOTENTRY*)0x00;
+    }
+}
+
+void ReadOneSector(int SectorNumber , unsigned char *Buffer) {
+    int i;
+    REGISTERS Registers;
+    unsigned char *RealBuffer = (unsigned char*)0x3000;
+    unsigned char Track = (unsigned char)(SectorNumber/(18*2));
+    unsigned char Head = (unsigned char)(SectorNumber/18)%2;
+    unsigned char Sector = (unsigned char)(SectorNumber%18)+1;
+
+    Registers.ES = 0x300;
+    Registers.BX = 0x00;
+
+    Registers.AX = 0x0201;
+    Registers.CX = (Track << 8)+Sector;
+    Registers.DX = 0x00+(Head << 8);
+    int32(0x13 , &(Registers));
+
+    for(i = 0; i < 512; i++) {
+        Buffer[i] = RealBuffer[i];
+    }
 }

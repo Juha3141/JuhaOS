@@ -27,6 +27,10 @@ extern "C" void Main(void) {
 	unsigned long MultibootAddress = MultibootInfo[1];
 
     System::Hardware::InitSystem();
+
+	while(1) {
+		;
+	}
     delay(500);
 //    System::Task::CreateTask((unsigned long)WatchDog , TASK_DEFAULT , "WatchDog" , "The Detective Dog, Finds system error and, handle them");
     TextScreen::EnableCursor(0xFF , 0xFF);

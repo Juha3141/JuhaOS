@@ -17,7 +17,7 @@ KERNEL64 = Kernel64.bin
 MAINKERNEL = SOUL
 SYSTEM = System
 
-MEMSIZE = 1024
+MEMSIZE = 8192
 
 CREATEKERNELBINFOLDER = CreateKernelBin
 CREATEKERNELBINSOURCE = $(CREATEKERNELBINFOLDER)/CreateKernelBin.c
@@ -58,7 +58,8 @@ BuildTarget:
 	cp $(TEMPRORYFOLDER)/$(KERNEL32) $(IMGFOLDER)
 	cp $(TEMPRORYFOLDER)/$(KERNEL64) $(IMGFOLDER)
 	cp $(TEMPRORYFOLDER)/$(MAINKERNEL) $(IMGFOLDER)
-
+	
+	sleep 0.1
 	umount $(IMGFOLDER)
 	cp $(IMGTARGET) $(ISOFOLDER)/$(SYSTEM)
 	mkisofs -quiet -V 'JUHAOS' -input-charset iso8859-1 -o $(TARGET) -b $(SYSTEM) $(ISOFOLDER)
@@ -71,6 +72,7 @@ clean:
 	make -C $(KERNEL64FOLDER) clean
 	make -C $(MAINFOLDER) clean
 	make -C $(KERNELLIBRARYFOLDER) clean
+	rm -rf $(TEMPRORYFOLDER)/*
 	rm -rf $(TARGET)
 	rm -rf $(IMGTARGET)
 	rm -rf $(IMGFOLDER)

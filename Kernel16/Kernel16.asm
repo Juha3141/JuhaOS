@@ -7,14 +7,16 @@ START:
 	mov ss , ax
 	mov sp , 0xFFFF
 	mov bp , 0xFFFF
-	mov ax , 0xB800
-	mov es , ax
+	
+	push 0x00
+	push 0x1000
+	push 4
+	push Kernel32FileName
+	call FindFile
 
 	push 0x00
 	push 0x800
-	push 16
-	push Kernel32FileName
-	call FindFile
+	call CheckMemory
 
 	lgdt [GDTInfo]
 
@@ -22,14 +24,7 @@ START:
 	mov eax , cr0
 	or eax , 0x01
 	mov cr0 , eax
-	sti
-
-	mov ax , 0x08
-	mov cs , ax
-
-	jmp 0x08:0x8000
-	
-	jmp $
+	jmp 0x08:Kernel32
 
 FindFile:
 ; bool FindFile(word *FileName , byte SectorCount , word Address , word MemoryOffset);
@@ -90,7 +85,7 @@ FindFile:
 		ret
 
 ReadSector: 
-; bool ReadSector(byte Sector , byte Head , byte Track , byte SectorCountToRead , byte DriveNumber , word Address , word MemoryOffset);
+; bool ReadSector(byte Sector , byte SectorCountToRead , word Address , word MemoryOffset , byte DriveNumber);
 	push bp
 	mov bp , sp
 	pusha
@@ -104,7 +99,6 @@ ReadSector:
 	div bx
 	add dl , 1
 	mov byte[Sector] , dl
-	mov bx , 0x00
 	mov dx , 0x00
 	mov bx , 0x02
 	div bx
@@ -113,6 +107,7 @@ ReadSector:
 	mov ax , word[bp+4]
 	mov bl , 18*2
 	div bl
+	
 	mov byte[Track] , al
 
 	mov ax , [bp+8]
@@ -139,6 +134,35 @@ ReadSector:
 	    pop bp
     	mov ax , 0x00
     	ret
+
+CheckMemory:
+	push bp
+	mov bp , sp
+	pusha
+
+	mov ax , word[bp+4]
+	mov es , ax
+	mov di , word[bp+6]
+	
+	mov ebx , 0x00
+	
+	.LOOP:
+		mov eax , 0xE820
+		mov edx , 0x534D4150
+		mov ecx , 24
+		int 0x15
+
+		cmp ebx , 0x00
+		je .CONTINUE
+		
+		add di , 24
+		jmp .LOOP
+	
+	.CONTINUE:
+		popa
+		mov sp , bp
+		pop bp
+		ret
 
 GDTInfo:
     dw GDT_END-GDT-1
@@ -174,10 +198,29 @@ Sector: db 0x00
 Head: db 0x00
 Track: db 0x00
 
+FileSize: dd 0x00
+SectorLocation: dw 0x00
 DriveNumber: db 0x00
 SectorCountToRead: dw 0x00
 ClusterLocation: dw 0x00
 Kernel32FileName: db "KERNEL32BIN"
 RootDirectoryCount: dw 224
 
-times (8192-($-$$)) db 0x00
+[BITS 32]
+
+Kernel32:
+    mov ax , 0x10
+    mov es , ax
+    mov ds , ax
+    mov ss , ax
+    mov fs , ax
+    mov gs , ax
+
+    mov esp , 0xFFFF
+    mov ebp , 0xFFFF
+
+	jmp 0x10000
+	
+	jmp $
+
+times (1024-($-$$)) db 0x00

@@ -17,18 +17,14 @@ void Hardware::InitSystem(void) {
     __asm__ ("cli");
     TimerController.Initialized = false;
     Hardware::EnableA20();
-    TextScreen::EnableCursor(0x00 , 0xFF);
     TextScreen::MoveCursor(0 , 1);
     TextScreen::ClearScreen(0x07);
-    TextScreen::printf("Loading : ");
     DescriptorTables::Initialize();
     Hardware::Keyboard::Initialize();
-    Hardware::Mouse::Initialize();
     Memory::Initialize();
     Task::Initialize();
     Hardware::Timer::Initialize();
     __asm__ ("sti");
-    TextScreen::printf("Done\n");
 }
 
 bool CheckOutputBuffer(void) {

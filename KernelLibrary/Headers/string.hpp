@@ -12,9 +12,9 @@ char *strcat(char *Destination , const char *Source);
 int strcmp(const char *Destination , const char *Source);
 int strncmp(const char *Destination , const char *Source);
 
-int atoi(const char *Buffer);
-int atol(const char *Buffer);
-char *itoa(int num , char *str , int base);
+unsigned long atoi(const char *Buffer);
+unsigned long atol(const char *Buffer);
+char *itoa(unsigned long Value , char *String , int Radix);
 void ReverseString(char *Buffer);
 
 void sprintf(char *Destination , const char *Format , ...);

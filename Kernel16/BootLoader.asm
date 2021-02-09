@@ -33,6 +33,7 @@ START:
 
 	mov ax , 0x00
 	mov bx , 0x00
+	mov cx , 0x00
 	cld
 
 	mov al , byte[ReservedSector]
@@ -90,7 +91,10 @@ START:
 	    add sp , 10
 		cmp ax , 0x00
 		je HandleError
+
 		jmp 0x400:0x00
+
+		jmp $
 
 	.HandleError:
 		mov ax , 0xAFAF
@@ -107,7 +111,7 @@ HandleError:
 	jmp $
 
 ReadSectorCHS: 
-; bool ReadSectorCHS(byte Sector , byte Head , byte Track , byte SectorCountToRead , byte DriveNumber , word Address , word MemoryOffset);
+; bool ReadSectorCHS(byte Sector , byte SectorCountToRead , word Address , word MemoryOffset , byte DriveNumber);	push bp
 	push bp
 	mov bp , sp
 	pusha
