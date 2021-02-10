@@ -27,7 +27,8 @@ extern "C" void Main(void) {
     System::Hardware::InitSystem();
     delay(500);
     System::Task::CreateTask((unsigned long)WatchDog , TASK_DEFAULT , "WatchDog" , "The Detective Dog, Finds system error and, handle them");
-    TextScreen::EnableCursor(0xFF , 0xFF);
+
+    TextScreen::DisableCursor();
     TextScreen::ClearScreen(0x07);
     TextScreen::MoveCursor(0 , 24);
     TextScreen::SetColor(0x70);
@@ -124,7 +125,7 @@ static void CreateRectangle(int X , int Y , int Width , int Height , int Charact
 }
 
 void JumpToMainKernel(void) {
-	__asm__ ("jmp 0x300000");
+	__asm__ ("jmp 0x400000");
 }
 
 void WatchDog(void) {

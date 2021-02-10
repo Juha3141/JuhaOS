@@ -131,16 +131,16 @@ void DescriptorTables::SetIDTEntry(int Index , unsigned long BaseAddress , unsig
     IDT[Index].Selector = Selector;
     IDT[Index].Type = Type;
     IDT[Index].IST = 0x01 & 0x3;
-    IDT[Index].NoUse = NULL;
+    IDT[Index].Reserved = 0;
 }
 
 void DescriptorTables::SetTSSEntry(TSSEntry *Tss , unsigned long BaseAddress , unsigned int Limit , unsigned char FlagsHigh , unsigned char FlagsLow , unsigned char Type) {
-    Tss->LimitLow = Limit & 0xFFFF;
-    Tss->LimitHigh = ((Limit >> 16) & 0xFF)|FlagsHigh;
     Tss->BaseAddressLow = BaseAddress & 0xFFFF;
     Tss->BaseAddressMiddle1 = (BaseAddress >> 16) & 0xFF;
     Tss->BaseAddressMiddle2 = (BaseAddress >> 24) & 0xFF;
     Tss->BaseAddressHigh = BaseAddress >> 32;
+    Tss->LimitLow = Limit & 0xFFFF;
+    Tss->LimitHigh = ((Limit >> 16) & 0xFF)|FlagsHigh;
     Tss->Type = FlagsLow|Type;
     Tss->Reserved = 0;
 }

@@ -20,6 +20,7 @@ namespace TextScreen {
     };
 
     void EnableCursor(unsigned char Start , unsigned char End);
+    void DisableCursor(void);
     void ClearScreen(char Color);
     void SetColor(char Color);
     char GetColor(void);

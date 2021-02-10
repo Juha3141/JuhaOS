@@ -22,7 +22,8 @@ clean:
 	rm -rf $(TEMPRORYFOLDER)/$(MAINFOLDER)
 
 all: prepare $(TARGETOBJECTS)
-	cd $(TEMPRORYFOLDER)/$(MAINFOLDER); $(LD) -m elf_x86_64 -T ../../$(MAINFOLDER)/Linker.ld -o ../SOUL $(TARGETOBJECTS) -nostdlib -L ../ -lkernel
+	cd $(TEMPRORYFOLDER)/$(MAINFOLDER); $(LD) -m elf_x86_64 -T ../../$(MAINFOLDER)/Linker.ld -o ../SOUL.elf $(TARGETOBJECTS) -nostdlib -L ../ -lkernel
+	cd $(TEMPRORYFOLDER)/; $(OBJCOPY) -O binary SOUL.elf SOUL
 
 %.obj:
 	$(CC) $(SOURCESFOLDER)/$*.cpp -c $(CCOPTION) -o $(TEMPRORYFOLDER)/$(MAINFOLDER)/$@

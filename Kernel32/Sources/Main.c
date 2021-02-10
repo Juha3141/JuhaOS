@@ -3,7 +3,7 @@
 #include <Assembly.h>
 
 #define KERNEL64_STARTADDRESS 0x200000
-
+#define SOUL_STARTADDRESS 0x400000
 #define FAT_ROOTENTRYCOUNT 224
 
 #define VBEMODE 0x117
@@ -50,16 +50,25 @@ void Main32(void) {
     int SectorNumber;
     int SectorCountToRead;
     unsigned char *Kernel64Address = (unsigned char*)KERNEL64_STARTADDRESS;
+    unsigned char *SoulAddress = (unsigned char*)SOUL_STARTADDRESS;
     unsigned char *TextScreenBuffer = (unsigned char*)0xB8000;
     REGISTERS Registers;
     FATROOTENTRY *Kernel64;
+    FATROOTENTRY *SOUL;
     for(i = 0; i < 80*25; i++) {
         *TextScreenBuffer++ = 0x00;
         *TextScreenBuffer++ = 0x07;
     }
     Kernel64 = FindFile("KERNEL64BIN");
+    SOUL = FindFile("SOUL       ");
     if(Kernel64 == NULL) {
         PrintString(0 , 0 , "I can't find the Kernel.");
+        while(1) {
+            ;
+        }
+    }
+    if(SOUL == NULL) {
+        PrintString(0 , 0 , "I can't find the Main Kernel.");
         while(1) {
             ;
         }
@@ -70,6 +79,14 @@ void Main32(void) {
         ReadOneSector(SectorNumber , Kernel64Address);
         SectorNumber += 1;
         Kernel64Address += 0x200;
+    }
+
+    SectorCountToRead = (SOUL->FileSize/512)+((SOUL->FileSize%512 != 0x00) ? 1 : 0);
+    SectorNumber = SOUL->ClusterStartAddress+31;
+    for(i = 0; i < SectorCountToRead; i++) {
+        ReadOneSector(SectorNumber , SoulAddress);
+        SectorNumber += 1;
+        SoulAddress += 0x200;
     }
 
     if(Check64BitSupported() == false) { 

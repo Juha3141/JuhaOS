@@ -3,8 +3,8 @@
 
 #include <Types.hpp>
 
-#define TSS_STARTADDRESS 0x400000
-#define IST_STARTADDRESS 0x500000
+#define TSS_STARTADDRESS 0x800000
+#define IST_STARTADDRESS 0x900000
 #define IST_SIZE 0x100000
 
 namespace System {
@@ -38,7 +38,7 @@ namespace System {
                 unsigned char Type;
                 unsigned short BaseAddressMiddle;
                 unsigned int BaseAddressHigh;
-                unsigned int NoUse;
+                unsigned int Reserved;
         };
 
         class Pointer {

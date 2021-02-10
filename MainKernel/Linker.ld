@@ -3,19 +3,19 @@ ENTRY(Main)
 SECTIONS {
   . = 0x400000;
   .text 0x400000 : {
-    *(.text .stub .text.* .gnu.linkonce.t.*)
+    *(.text .stub .text.*)
   }
   .data : {
-    *(.data .data.* .gnu.linkonce.d.*)
+    *(.data .data.*)
   }
   .rodata : {
   
-    *(.rodata .rodata.* .gnu.linkonce.r.*)
+    *(.rodata .rodata.*)
   }
   .rodata1 : {
     *(.rodata1)
   }
   .bss : {
-    *(.bss .bss.* .gnu.linkonce.b.*)
+    *(.bss .bss.*)
   }
 }

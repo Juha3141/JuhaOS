@@ -13,6 +13,11 @@ void TextScreen::EnableCursor(unsigned char Start , unsigned char End) {
     Hardware::WritePort(0x3D5 , (Hardware::ReadPort(0x3D5) & 0xE0)|End);
 }
 
+void TextScreen::DisableCursor(void) {
+    System::Hardware::WritePort(0x3D4 , 0x0A);
+	System::Hardware::WritePort(0x3D5 , 0x20);
+}
+
 void TextScreen::ClearScreen(char Color) {
     int i;
     unsigned char *Buffer = (unsigned char*)TEXTSCREEN_BUFFER;
