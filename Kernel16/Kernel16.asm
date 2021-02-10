@@ -21,6 +21,7 @@ START:
 	lgdt [GDTInfo]
 
 	cli
+	
 	mov eax , cr0
 	or eax , 0x01
 	mov cr0 , eax

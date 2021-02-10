@@ -12,7 +12,6 @@ static Task::Manager TaskManager;
 void Task::Initialize(void) {
     int i;
     __asm__ ("cli");
-    TaskManager.Tasks = (TASKINFO*)Memory::malloc(TASK_MAXCOUNT*sizeof(TASKINFO));
     for(i = 0; i < TASK_MAXCOUNT; i++) {
         TaskManager.Tasks[i].ID = TASK_MAINTASKID+i;
         TaskManager.Tasks[i].Flags = TASK_NONE;

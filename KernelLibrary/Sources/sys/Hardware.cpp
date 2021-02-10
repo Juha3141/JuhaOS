@@ -17,7 +17,6 @@ void Hardware::InitSystem(void) {
     __asm__ ("cli");
     TimerController.Initialized = false;
     Hardware::EnableA20();
-    TextScreen::MoveCursor(0 , 1);
     TextScreen::ClearScreen(0x07);
     DescriptorTables::Initialize();
     Hardware::Keyboard::Initialize();
@@ -61,11 +60,19 @@ void Hardware::EnableA20(void) {
     WritePort(0x60 , Data);
 }
 
+static inline void WaitForKeyboardData(void) {
+    int i;
+    for(i = 0; i < 0xFFFF; i++) {
+        if(!(Hardware::ReadPort(0x64) & 0x02)) {
+            break;
+        }
+    }
+}
+
 void Hardware::Keyboard::Initialize(void) {
     KeyboardController.Capslock = false;
     KeyboardController.Shift = false;
     KeyboardController.ASCII.Initialize(1024);
-    KeyboardController.EXT.Initialize(1024);
 }
 
 bool Hardware::Keyboard::GetKeyData(unsigned char *ASCIICode) {
@@ -74,15 +81,6 @@ bool Hardware::Keyboard::GetKeyData(unsigned char *ASCIICode) {
     }
     *ASCIICode = KeyboardController.ASCII.Dequeue();
     return true;
-}
-
-static inline void WaitForKeyboardData(void) {
-    int i;
-    for(i = 0; i < 0xFFFF; i++) {
-        if(!(Hardware::ReadPort(0x64) & 0x02)) {
-            break;
-        }
-    }
 }
 
 void Hardware::Mouse::Initialize(void) {
@@ -107,17 +105,21 @@ void Hardware::Mouse::Initialize(void) {
 void Hardware::Timer::Initialize(void) {
     TimerController.Initialized = true;
     TimerController.TickCount = 0;
+    __asm__ ("cli");
     Hardware::WritePort(0x43 , 0x30);
     Hardware::WritePort(0x43 , 0x34);
     Hardware::WritePort(0x40 , TIMER_CYCLE);
     Hardware::WritePort(0x40 , TIMER_CYCLE >> 0x08);
+    __asm__ ("sti");
 }
 
 void Hardware::Timer::Reinitialize(unsigned short Count) {
+    __asm__ ("cli");
     Hardware::WritePort(0x43 , 0x30);
     Hardware::WritePort(0x43 , 0x34);
     Hardware::WritePort(0x40 , Count);
     Hardware::WritePort(0x40 , Count >> 0x08);
+    __asm__ ("sti");
 }
 
 unsigned long GetTickCount(void) {
@@ -278,12 +280,50 @@ void Hardware::Keyboard::ProcessAndPutToQueue(unsigned char KeyCode) {
 int getch(void) {
 	int ASCIICode;
 	while(1) {
-		if(KeyboardController.ASCII.CheckEmpty() == false) {
-            ASCIICode = KeyboardController.ASCII.Dequeue();
-			if(ASCIICode != 0) {
-				break;
-			}
+        ASCIICode = KeyboardController.ASCII.Dequeue();
+		if(ASCIICode != 0) {
+			break;
 		}
 	}
 	return ASCIICode;
+}
+
+void Queue::Initialize(int MaxSize) {
+	if(MaxSize > QUEUE_MAXSIZE) {
+		MaxSize = QUEUE_MAXSIZE;
+	}
+	this->MaxSize = MaxSize;
+	this->Rear = 0;
+	this->Front = 0;
+}
+
+bool Queue::CheckEmpty(void) {
+	if(Rear == Front) {
+		return true;
+    }
+	return false;
+}
+
+bool Queue::CheckFull(void) {
+	if((Rear+1)%MaxSize == Front) {
+		return true;
+	}
+	return false;
+}
+
+bool Queue::Enqueue(unsigned char Data) {
+	if(this->CheckFull() == true) {
+		return false;
+	}
+	Rear = (Rear+1)%MaxSize;
+	Buffer[Rear] = Data;
+	return true;
+}
+
+unsigned char Queue::Dequeue(void) {
+	if(this->CheckEmpty() == true) {
+		return 0;
+	}
+	Front = (Front+1)%MaxSize;
+	return Buffer[Front];
 }

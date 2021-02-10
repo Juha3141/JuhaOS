@@ -44,11 +44,6 @@ bool Memory::Initialize(void) {
     }
 
     TotalMemory -= MEMORY_STARTADDRESS;
-    TextScreen::printf("Total memory : %dMB\n" , TotalMemory/1024/1024);
-
-    while(1) {
-        ;
-    }
     __asm__ ("sti");
     return true;
 }
@@ -83,41 +78,83 @@ unsigned long Memory::Management::Initialize(unsigned long StartAddress , unsign
     this->BlockEndAddress = StartAddress+(BlockCount*sizeof(BLOCK))-1;
     this->StartAddress = StartAddress+(BlockCount*sizeof(BLOCK));
     this->EndAddress = EndAddress;
-    this->BlockSize = BlockSize;;
+    this->BlockSize = BlockSize;
     this->Blocks = (BLOCK*)this->BlockStartAddress;
-    TextScreen::printf("Usable              : 0x%X - 0x%X\n" , this->StartAddress , this->EndAddress);
-    TextScreen::printf("Block Start Address : 0x%X - 0x%X\n" , this->BlockStartAddress , this->BlockEndAddress);
-    TextScreen::printf("Block Count         : %d\n" , this->BlockCount);
-    TextScreen::printf("Block Size          : %d\n" , this->BlockSize);
 
     for(i = 0; i < BlockCount; i++) {
-        Blocks[i].Allocated = MEMORY_BLOCK_NOT_ALLOCATED;
-        Blocks[i].Address = (this->StartAddress+(i*BlockSize));
+        Blocks[i].Using = MEMORY_NOT_USING;
+        Blocks[i].EntryInfo = MEMORY_NOT_ENTRY;
+        Blocks[i].BlockCount = 0;
+        Blocks[i].BlockAddress = i;
     }
     this->UsingBlockCount = 0;
     return this->EndAddress-this->StartAddress;
 }
 
 bool Memory::Management::Allocated(void *Address) {
-    return (this->Blocks[PhysicalAddressToBlockIndex((unsigned long)Address)].Allocated == MEMORY_BLOCK_NOT_ALLOCATED) ? false : true;
+    unsigned long BlockAddress;
+    unsigned long PhysicalAddress = (unsigned long)Address;
+    if((PhysicalAddress >= this->StartAddress) && (PhysicalAddress <= this->EndAddress)) {
+        BlockAddress = (((unsigned long)Address)-this->StartAddress)/BlockSize;
+        if(Blocks[BlockAddress].Using == MEMORY_USING) {
+            return true;
+        }
+    }
+    return false;
 }
 
 unsigned long Memory::Management::GetTotalSize(void) {
     return this->UsingBlockCount*this->BlockSize;
 }
 
-unsigned long Memory::Management::GetUsingBlock(void) {
+unsigned long Memory::Management::GetUsingBlockCount(void) {
     return this->UsingBlockCount;
 }
 
 unsigned long Memory::Management::malloc(unsigned long Size) {
-    ;
+    unsigned long i;
+    unsigned long j;
+    unsigned long BlockAddress;
+    unsigned long BlockCountToAllocate = (Size/BlockSize);
+    unsigned long PhysicalAddress;
+    if(Size%BlockSize != 0) {
+        BlockCountToAllocate += 1;
+    }
+    while(1) {
+        if(i >= this->BlockCount) {
+            break;
+        }
+        if(Blocks[i].Using == MEMORY_NOT_USING) {
+            BlockAddress = i;
+            for(j = 0; j < BlockCountToAllocate; j++) {
+                Blocks[i+j].Using = MEMORY_USING;
+                Blocks[i+j].EntryInfo = MEMORY_NOT_ENTRY;
+            }
+            Blocks[i].BlockCount = BlockCountToAllocate;
+            Blocks[i].EntryInfo = MEMORY_ENTRY_POINT;
+            break;
+        }
+        i += 1;
+    }
+    PhysicalAddress = (BlockAddress*this->BlockSize)+this->StartAddress;
+    UsingBlockCount += BlockCountToAllocate;
+    return PhysicalAddress;
 }
 
 void Memory::Management::free(void *Address) {
-    ;
+    unsigned long i;
+    unsigned long BlockAddress = (((unsigned long)Address)-this->StartAddress)/BlockSize;
+    if(Allocated(Address) == false) {
+        TextScreen::printf("Address 0x%X isn't allocated\n" , Address);
+        return;
+    }
+    UsingBlockCount -= Blocks[BlockAddress].BlockCount;
+    for(i = 0; i < Blocks[BlockAddress].BlockCount; i++) {
+        Blocks[i+BlockAddress].Using = MEMORY_NOT_USING;
+        Blocks[i+BlockAddress].EntryInfo = MEMORY_NOT_ENTRY;
+        Blocks[i+BlockAddress].BlockCount = 0;
+    }
 }
-
 
 
 unsigned long Memory::GetTotalSize(void) {
@@ -129,9 +166,9 @@ unsigned long Memory::GetUsingBlock(void) {
 }
 
 unsigned long Memory::malloc(unsigned long Size) {
-
+    return MemoryManager[0].malloc(Size);
 }
 
 void Memory::free(void *Address) {
-    
+    MemoryManager[0].free(Address);
 }

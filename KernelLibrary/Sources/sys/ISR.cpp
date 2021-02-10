@@ -13,7 +13,7 @@ static void HandleError(const char *ErrorMessage) {
     char *ContextAddress = (char*)IST_STARTADDRESS+IST_SIZE-sizeof(Task::REGISTERS);
     Task::REGISTERS Registers;
     memcpy(&(Registers) , ContextAddress , sizeof(Task::REGISTERS)); 
-
+/*
     TextScreen::ClearScreen(0x04);
     TextScreen::printf("Something was really wrong in Kernel system, so The OS has to be halted\n");
     TextScreen::printf("Here's some information about error:\n\n");
@@ -77,7 +77,8 @@ static void HandleError(const char *ErrorMessage) {
     TextScreen::printf(" | GS     : 0x%X\n" , Registers.GS);
     TextScreen::printf("-----------------------------------------------------------------\n");
     TextScreen::printf("Contact : ianisnumber2027@gmail.com\nWebsite:http://juhaos.surge.sh\n\n");
-    TextScreen::EnableCursor(0xFF , 0xFF);
+    TextScreen::EnableCursor(0xFF , 0xFF);*/
+    TextScreen::printf("%s" , ErrorMessage);
 }
 
 void ISR0_DividedByZero(void) {

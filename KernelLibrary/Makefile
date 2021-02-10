@@ -8,7 +8,7 @@ LIBFOLDER = KernelLibrary
 SOURCESFOLDER = Sources
 HEADERSFOLDER = Headers
 
-CCOPTION = -O1 -m64 -fpack-struct=1 -mcmodel=large -ffreestanding -fno-use-cxa-atexit -fno-builtin -fno-rtti -fno-exceptions -fno-leading-underscore -Wno-write-strings -Wno-char-subscripts -Wno-unused-parameter -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -W -Wall -I $(HEADERSFOLDER)/ -nostdlib -masm=intel
+CCOPTION = -O0 -m64 -fpack-struct=1 -mcmodel=large -ffreestanding -fno-use-cxa-atexit -fno-builtin -fno-rtti -fno-exceptions -fno-leading-underscore -Wno-write-strings -Wno-char-subscripts -Wno-unused-parameter -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -W -Wall -I $(HEADERSFOLDER)/ -nostdlib -masm=intel
 TARGETOBJECTS = \
 sys/DescriptorTables.obj \
 sys/Hardware.obj \

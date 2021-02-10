@@ -27,6 +27,22 @@
 #define TIMER_NANOSECOND 100
 #define TIMER_CYCLE (TIMER_NANOSECOND*1193180)/1000000
 
+#define QUEUE_MAXSIZE 4096
+
+class Queue {
+	public:
+		void Initialize(int MaxSize);
+		bool CheckEmpty(void);
+		bool CheckFull(void);
+		bool Enqueue(unsigned char Data);
+		unsigned char Dequeue(void);
+	private:
+		int MaxSize;
+		int Front;
+		int Rear;
+		int Buffer[QUEUE_MAXSIZE];
+};
+
 namespace System {
     namespace Hardware {
         extern "C" void WritePort(unsigned short Port , unsigned char Data);
@@ -37,7 +53,6 @@ namespace System {
             class Controller {
                 public:
                     Queue ASCII;
-                    Queue EXT;
                     bool Shift;
                     bool Capslock;
                     bool Numlock;
@@ -67,7 +82,7 @@ namespace System {
             class Controller {
                 public:
                     bool Initialized;
-                    unsigned long TickCount;
+                    unsigned long TickCount = 0;
             };
             void Initialize(void);
             void Reinitialize(unsigned short Count);

@@ -66,7 +66,6 @@ void Main32(void) {
     }
     SectorCountToRead = (Kernel64->FileSize/512)+((Kernel64->FileSize%512 != 0x00) ? 1 : 0);
     SectorNumber = Kernel64->ClusterStartAddress+31;
-    
     for(i = 0; i < SectorCountToRead; i++) {
         ReadOneSector(SectorNumber , Kernel64Address);
         SectorNumber += 1;

@@ -67,7 +67,7 @@ namespace System {
 
                 unsigned long RunningTaskCount;
                 unsigned long TaskCount;
-                TASKINFO *Tasks;
+                TASKINFO Tasks[TASK_MAXCOUNT];
                 unsigned long Timer;
         };
 

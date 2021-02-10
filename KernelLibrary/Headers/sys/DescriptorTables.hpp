@@ -3,7 +3,7 @@
 
 #include <Types.hpp>
 
-#define TSS_STARTADDRESS 0x400000
+#define TSS_STARTADDRESS 0xB00000
 #define IST_STARTADDRESS 0x900000
 #define IST_SIZE 0x100000
 

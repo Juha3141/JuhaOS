@@ -11,54 +11,6 @@
 #define MIN(X , Y) ((X) < (Y)) ? (X) : (Y)
 #define MAX(X , Y) ((X) > (Y)) ? (X) : (Y)
 
-#define QUEUE_MAXSIZE 4096
-
-class Queue {
-	public:
-		void Initialize(int MaxSize) {
-		    if(MaxSize > QUEUE_MAXSIZE) {
-		        MaxSize = QUEUE_MAXSIZE;
-		    }
-		    this->MaxSize = MaxSize;
-		    this->Rear = 0;
-		    this->Front = 0;
-		}
-		bool CheckEmpty(void) {
-			if(Rear == Front) {
-				return true;
-			}
-			return false;
-		}
-		bool CheckFull(void) {
-			if((Rear+1)%MaxSize == Front) {
-				return true;
-			}
-			return false;
-		}
-		bool Enqueue(unsigned char Data) {
-			if(this->CheckFull() == true) {
-				return false;
-			}
-			Rear = (Rear+1)%MaxSize;
-			Buffer[Rear] = Data;
-			return true;
-		}
-		unsigned char Dequeue(void) {
-			if(this->CheckEmpty() == true) {
-				return 0;
-			}
-			Front = (Front+1)%MaxSize;
-			return Buffer[Front];
-		}
-	private:
-		int MaxSize;
-		int Front;
-		int Rear;
-		int Buffer[QUEUE_MAXSIZE];
-};
-
-#pragma pack(push , 1)
-
 struct VBEMODEINFOBLOCK {
 	unsigned short Attributes;
 	unsigned char WinA;
@@ -111,24 +63,5 @@ struct VBEMODEINFOBLOCK {
 
     unsigned char Reserved4[189];
 };
-
-typedef struct {
-    void *Start;
-    void *End;
-    char *Name;
-    unsigned int Reserved;
-}MODULE;
-
-typedef struct {
-    unsigned int Flags;
-    unsigned int MemoryLow;
-    unsigned int MemoryHigh;
-    unsigned int BootDrive;
-    char *CommandLine;
-    unsigned int ModulesCount;
-    MODULE *Modules;
-}MULTIBOOTINFO;
-
-#pragma pack(pop)
 
 #endif

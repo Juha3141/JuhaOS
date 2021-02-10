@@ -22,17 +22,11 @@ extern "C" void Main(void) {
 	int Color;
 	char OSInfo[200];
 	unsigned char UserInput;
-	unsigned long *MultibootInfo = (unsigned long*)0x12000;
-	unsigned long MultibootMagic = MultibootInfo[0];
-	unsigned long MultibootAddress = MultibootInfo[1];
+    TextUserInterface::MenuEntry *MainMenu;
 
     System::Hardware::InitSystem();
-
-	while(1) {
-		;
-	}
     delay(500);
-//    System::Task::CreateTask((unsigned long)WatchDog , TASK_DEFAULT , "WatchDog" , "The Detective Dog, Finds system error and, handle them");
+    System::Task::CreateTask((unsigned long)WatchDog , TASK_DEFAULT , "WatchDog" , "The Detective Dog, Finds system error and, handle them");
     TextScreen::EnableCursor(0xFF , 0xFF);
     TextScreen::ClearScreen(0x07);
     TextScreen::MoveCursor(0 , 24);
@@ -42,7 +36,7 @@ extern "C" void Main(void) {
     }
     TextScreen::SetColor(0x01);
     TextScreen::MoveCursor(68 , 1);
-    TextScreen::PrintString("(tm)");
+    TextScreen::PrintString("(tm)\n");
     TextScreen::MoveCursor(9 , 2);
     delay(100);
     TextScreen::PrintString("    /$$$$$           /$$                  /$$$$$$   /$$$$$$ ");
@@ -76,8 +70,6 @@ extern "C" void Main(void) {
     TextScreen::MoveCursor(0 , 24);
     TextScreen::SetColor(0x70);
     TextScreen::printf("%s" , OS_COPYRIGHT);
-
-    TextUserInterface::MenuEntry *MainMenu;
     MainMenu->CreateMenu(80/2-((strlen(OSInfo)+16)/2) , 12 , strlen(OSInfo)+16 , 7 , "Menu");
     MainMenu->AddItem("Install JuhaOS" , 0x07);
     MainMenu->AddItem("Test JuhaOS Now" , 0x07);
@@ -136,7 +128,12 @@ void JumpToMainKernel(void) {
 }
 
 void WatchDog(void) {
+    unsigned long i = 0;
+    unsigned char *Buffer = (unsigned char *)0xB8000;
+    unsigned char Spin[5] = "-\\|/";
 	while(1) {
-		;
+		Buffer[79*2] = Spin[i%5];
+        i++;
+        delay(50);
 	}
 }

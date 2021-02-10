@@ -64,12 +64,6 @@ extern IRQ12_Mouse
 
     push fs
     push gs
-
-    mov ax , 0x10
-    mov ds , ax
-    mov es , ax
-    mov fs , ax
-    mov gs , ax
 %endmacro
 
 IRQ0_ASM_Timer:

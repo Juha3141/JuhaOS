@@ -9,14 +9,17 @@
 #define MEMORY_STARTADDRESS 0xC00000
 #define E820_STARTADDRESS 0x8000
 
-#define MEMORY_BLOCK_NOT_ALLOCATED 0xFF
+#define MEMORY_USING 0x01
+#define MEMORY_NOT_USING 0x02
+
+#define MEMORY_ENTRY_POINT 0x01
+#define MEMORY_NOT_ENTRY 0x02
+
 #define MEMORY_BLOCK_256B 256
 #define MEMORY_BLOCK_512B 512
 #define MEMORY_BLOCK_1KB 1024
 #define MEMORY_BLOCK_2KB 2048
 #define MEMORY_BLOCK_4KB 4096
-
-#pragma pack(push , 1)
 
 namespace System {
     namespace Memory {
@@ -27,16 +30,17 @@ namespace System {
             unsigned int ACPI;
         };
         struct BLOCK {
-            unsigned char Allocated;
-            unsigned long Address;
-            unsigned char Padding;
+            unsigned char Using;
+            unsigned char EntryInfo;
+            unsigned int BlockCount;
+            unsigned int BlockAddress;
         };
         class Management {
             public:
                 unsigned long Initialize(unsigned long StartAddress , unsigned long EndAddress);
                 bool Allocated(void *Address);
                 unsigned long GetTotalSize(void);
-                unsigned long GetUsingBlock(void);
+                unsigned long GetUsingBlockCount(void);
 
                 unsigned long malloc(unsigned long Size);
                 void free(void *Address);
@@ -67,7 +71,5 @@ namespace System {
         void free(void *Address);
     }
 }
-
-#pragma pack(pop)
 
 #endif
