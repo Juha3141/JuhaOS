@@ -18,11 +18,20 @@ void Hardware::InitSystem(void) {
     TimerController.Initialized = false;
     Hardware::EnableA20();
     TextScreen::ClearScreen(0x07);
+    TextScreen::printf("DescriptorTables  : ");
     DescriptorTables::Initialize();
+    TextScreen::printf("ok\n");
+    TextScreen::printf("Keyboard System   : ");
     Hardware::Keyboard::Initialize();
+    TextScreen::printf("ok\n");
+    TextScreen::printf("Memory Management : ");
     Memory::Initialize();
+    TextScreen::printf("Task System       : ");
     Task::Initialize();
+    TextScreen::printf("ok\n");
+    TextScreen::printf("System Timer      : ");
     Hardware::Timer::Initialize();
+    TextScreen::printf("ok\n");
     __asm__ ("sti");
 }
 

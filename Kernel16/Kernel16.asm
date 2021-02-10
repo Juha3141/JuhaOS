@@ -7,6 +7,9 @@ START:
 	mov ss , ax
 	mov sp , 0xFFFF
 	mov bp , 0xFFFF
+
+	mov eax , 0x2401
+	int 0x15
 	
 	push 0x00
 	push 0x1000

@@ -44,6 +44,7 @@ bool Memory::Initialize(void) {
     }
 
     TotalMemory -= MEMORY_STARTADDRESS;
+    TextScreen::printf("%dMB\n" , TotalMemory/1024/1024);
     __asm__ ("sti");
     return true;
 }
