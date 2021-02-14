@@ -1,6 +1,10 @@
 [ORG 0x4000]
 [BITS 16]
 
+    jmp START
+
+VideoMode: dw 0x117
+
 START:
 	mov ax , 0x00
 	mov ds , ax
@@ -10,7 +14,31 @@ START:
 
 	mov eax , 0x2401
 	int 0x15
-	
+
+    mov ax , 0x4F01
+    mov cx , word[VideoMode]
+    mov si , 0x100
+    mov es , si
+    mov dx , 0x00
+    int 0x10
+    cmp ax , 0x4F
+    jne NOGRAPHICS
+
+    mov ax , 0x4F02
+    mov dx , word[VideoMode]
+    mov bx , 0x4000
+    add bx , dx
+    int 0x10
+    cmp ax , 0x4F
+    jne NOGRAPHICS
+
+    jmp LOADKERNEL32
+
+NOGRAPHICS:
+    mov si , 0x1000
+    mov eax , 0xDEADBADA
+    mov dword[si] , eax
+LOADKERNEL32:
 	push 0x00
 	push 0x1000
 	push 4

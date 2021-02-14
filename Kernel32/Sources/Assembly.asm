@@ -36,7 +36,7 @@ SwitchTo64BitAndJump:
     or eax , 0x20
     mov cr4 , eax
 
-    mov eax , 0x12000
+    mov eax , 0x16000
     mov cr3 , eax
 
     mov ecx , 0xC0000080

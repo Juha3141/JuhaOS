@@ -2,7 +2,6 @@ NASM = nasm
 KERNEL16FOLDER = Kernel16
 KERNEL32FOLDER = Kernel32
 KERNEL64FOLDER = Kernel64
-MAINFOLDER = MainKernel
 KERNELLIBRARYFOLDER = KernelLibrary
 TEMPRORYFOLDER = Temprory
 IMGFILESFOLDER = Floppy/*
@@ -14,10 +13,9 @@ BOOTLOADER = BootLoader.bin
 KERNEL16 = Kernel16.bin
 KERNEL32 = Kernel32.bin
 KERNEL64 = Kernel64.bin
-MAINKERNEL = SOUL
 SYSTEM = System
 
-MEMSIZE = 4096
+MEMSIZE = 16384
 
 CREATEKERNELBINFOLDER = CreateKernelBin
 CREATEKERNELBINSOURCE = $(CREATEKERNELBINFOLDER)/CreateKernelBin.c
@@ -29,7 +27,7 @@ IMGTARGET = OS.img
 prepare:
 	rm -rf iso
 
-all: prepare BuildKernelLibrary BuildKernel16 BuildKernel32 BuildKernel64 BuildMainKernel BuildTarget
+all: prepare BuildKernelLibrary BuildKernel16 BuildKernel32 BuildKernel64 BuildTarget
 
 BuildKernel16:
 	make -C $(KERNEL16FOLDER) all
@@ -39,9 +37,6 @@ BuildKernel32:
 
 BuildKernel64:
 	make -C $(KERNEL64FOLDER) all
-
-BuildMainKernel:
-	make -C $(MAINFOLDER) all
 
 BuildKernelLibrary:
 	make -C $(KERNELLIBRARYFOLDER) all
@@ -55,9 +50,9 @@ BuildTarget:
 	mount -t vfat -o loop $(IMGTARGET) $(IMGFOLDER)
 
 	cp $(TEMPRORYFOLDER)/$(KERNEL16FOLDER)/$(KERNEL16) $(IMGFOLDER)
+	
 	cp $(TEMPRORYFOLDER)/$(KERNEL32) $(IMGFOLDER)
 	cp $(TEMPRORYFOLDER)/$(KERNEL64) $(IMGFOLDER)
-	cp $(TEMPRORYFOLDER)/$(MAINKERNEL) $(IMGFOLDER)
 	
 	sleep 0.1
 	umount $(IMGFOLDER)
@@ -70,7 +65,6 @@ clean:
 	make -C $(KERNEL16FOLDER) clean
 	make -C $(KERNEL32FOLDER) clean
 	make -C $(KERNEL64FOLDER) clean
-	make -C $(MAINFOLDER) clean
 	make -C $(KERNELLIBRARYFOLDER) clean
 	rm -rf $(TEMPRORYFOLDER)/*
 	rm -rf $(TARGET)

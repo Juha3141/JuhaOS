@@ -43,32 +43,23 @@ typedef struct {
 void PrintString(int X , int Y , const char *Buffer);
 void ReadSector(int SectorNumber , unsigned char SectorCountToRead , unsigned char DriveNumber);
 FATROOTENTRY *FindFile(unsigned char *FileName);
-void ReadOneSector(int SectorNumber , unsigned char *Buffer);
+void ReadOneSector(int SectorNumber , unsigned char *Buffer , int DriveNumber);
 
 void Main32(void) {
     int i;
     int SectorNumber;
     int SectorCountToRead;
     unsigned char *Kernel64Address = (unsigned char*)KERNEL64_STARTADDRESS;
-    unsigned char *SoulAddress = (unsigned char*)SOUL_STARTADDRESS;
     unsigned char *TextScreenBuffer = (unsigned char*)0xB8000;
     REGISTERS Registers;
     FATROOTENTRY *Kernel64;
-    FATROOTENTRY *SOUL;
     for(i = 0; i < 80*25; i++) {
         *TextScreenBuffer++ = 0x00;
         *TextScreenBuffer++ = 0x07;
     }
     Kernel64 = FindFile("KERNEL64BIN");
-    SOUL = FindFile("SOUL       ");
     if(Kernel64 == NULL) {
         PrintString(0 , 0 , "I can't find the Kernel.");
-        while(1) {
-            ;
-        }
-    }
-    if(SOUL == NULL) {
-        PrintString(0 , 0 , "I can't find the Main Kernel.");
         while(1) {
             ;
         }
@@ -76,17 +67,9 @@ void Main32(void) {
     SectorCountToRead = (Kernel64->FileSize/512)+((Kernel64->FileSize%512 != 0x00) ? 1 : 0);
     SectorNumber = Kernel64->ClusterStartAddress+31;
     for(i = 0; i < SectorCountToRead; i++) {
-        ReadOneSector(SectorNumber , Kernel64Address);
+        ReadOneSector(SectorNumber , Kernel64Address , 0x00);
         SectorNumber += 1;
         Kernel64Address += 0x200;
-    }
-
-    SectorCountToRead = (SOUL->FileSize/512)+((SOUL->FileSize%512 != 0x00) ? 1 : 0);
-    SectorNumber = SOUL->ClusterStartAddress+31;
-    for(i = 0; i < SectorCountToRead; i++) {
-        ReadOneSector(SectorNumber , SoulAddress);
-        SectorNumber += 1;
-        SoulAddress += 0x200;
     }
 
     if(Check64BitSupported() == false) { 
@@ -95,7 +78,7 @@ void Main32(void) {
             ;
         }
     }
-    InitPML4(0x12000);
+    InitPML4(0x16000);
     SwitchTo64BitAndJump();
     while(1) { 
         ;
@@ -137,7 +120,7 @@ FATROOTENTRY *FindFile(unsigned char *FileName) {
     }
 }
 
-void ReadOneSector(int SectorNumber , unsigned char *Buffer) {
+void ReadOneSector(int SectorNumber , unsigned char *Buffer , int DriveNumber) {
     int i;
     REGISTERS Registers;
     unsigned char *RealBuffer = (unsigned char*)0x3000;
@@ -150,7 +133,7 @@ void ReadOneSector(int SectorNumber , unsigned char *Buffer) {
 
     Registers.AX = 0x0201;
     Registers.CX = (Track << 8)+Sector;
-    Registers.DX = 0x00+(Head << 8);
+    Registers.DX = DriveNumber+(Head << 8);
     int32(0x13 , &(Registers));
 
     for(i = 0; i < 512; i++) {
