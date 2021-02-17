@@ -26,7 +26,7 @@ clean:
 
 all: prepare $(TARGETOBJECTS)
 	nasm $(SOURCESFOLDER)/$(ENTRYFILE) -f elf64 -o $(TEMPRORYFOLDER)/$(KERNEL64FOLDER)/Entry.obj
-	cd $(TEMPRORYFOLDER)/$(KERNEL64FOLDER); $(LD) -m elf_x86_64 -T ../../$(KERNEL64FOLDER)/Linker.ld -o ../Kernel64.elf Entry.obj $(TARGETOBJECTS) -nostdlib -L ../ -lkernel -lkernelgraphics
+	cd $(TEMPRORYFOLDER)/$(KERNEL64FOLDER); $(LD) -m elf_x86_64 -T ../../$(KERNEL64FOLDER)/Linker.ld -o ../Kernel64.elf Entry.obj $(TARGETOBJECTS) -L ../ -lkernel -lkernelgraphics
 	cd $(TEMPRORYFOLDER)/; $(OBJCOPY) -O binary Kernel64.elf Kernel64.bin
 
 %.obj:
