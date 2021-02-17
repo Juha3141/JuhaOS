@@ -48,8 +48,6 @@ namespace System {
         extern "C" void WritePort(unsigned short Port , unsigned char Data);
         extern "C" unsigned char ReadPort(unsigned short Port);
         void InitSystem(void);
-        void FixSystem(void);
-        void EnableA20(void);
         namespace Keyboard {
             class Controller {
                 public:

@@ -4,9 +4,6 @@
 #include <sys/MemoryManagement.hpp>
 #include <sys/Task.hpp>
 
-bool CheckInputBuffer(void);
-bool CheckOutputBuffer(void);
-
 using namespace System;
 
 static Hardware::Keyboard::Controller KeyboardController;
@@ -16,7 +13,6 @@ static Hardware::Timer::Controller TimerController;
 void Hardware::InitSystem(void) {
     __asm__ ("cli");
     TimerController.Initialized = false;
-    Hardware::EnableA20();
     TextScreen::ClearScreen(0x07);
     TextScreen::printf("DescriptorTables  : ");
     DescriptorTables::Initialize();
@@ -36,59 +32,6 @@ void Hardware::InitSystem(void) {
     __asm__ ("sti");
 }
 
-void Hardware::FixSystem(void) {
-    __asm__ ("cli");
-    TimerController.Initialized = false;
-    DescriptorTables::Initialize();
-    Hardware::Keyboard::Initialize();
-    Memory::Initialize();
-    Hardware::Timer::Initialize();
-    __asm__ ("sti");
-}
-
-bool CheckOutputBuffer(void) {
-    if(Hardware::ReadPort(0x64) & 0x01) {
-        return false;
-    }
-    return true;
-}
-
-bool CheckInputBuffer(void) {
-    if(Hardware::ReadPort(0x64) & 0x02) {
-        return false;
-    }
-    return true;
-}
-
-void Hardware::EnableA20(void) {
-    int i;
-    unsigned char Data;
-    Hardware::WritePort(0x64 , 0xD0);
-    for(i = 0; i < 0xFFFF; i++) {
-        if(CheckOutputBuffer() == false) {
-            break;
-        }
-    }
-    Data = Hardware::ReadPort(0x60);
-    Data |= 0x01;
-    for(i = 0; i < 0xFFFF; i++) {
-        if(CheckInputBuffer() == true) {
-            break;
-        }
-    }
-    WritePort(0x64 , 0xD1);
-    WritePort(0x60 , Data);
-}
-
-static inline void WaitForKeyboardData(void) {
-    int i;
-    for(i = 0; i < 0xFFFF; i++) {
-        if(!(Hardware::ReadPort(0x64) & 0x02)) {
-            break;
-        }
-    }
-}
-
 void Hardware::Keyboard::Initialize(void) {
     KeyboardController.Capslock = false;
     KeyboardController.Shift = false;
@@ -105,21 +48,18 @@ bool Hardware::Keyboard::GetKeyData(unsigned char *ASCIICode) {
 
 void Hardware::Mouse::Initialize(void) {
     unsigned char Data;
-    __asm__ ("cli");
-    MouseController.MouseQueue.Initialize(512);
+    /*
+     * fixme : mouse system doesn't working in VMWARE/Virtualbox
+     */
+    MouseController.MouseQueue.Initialize(4096);
     Hardware::WritePort(0x64 , 0xA8);
-    Hardware::WritePort(0x64 , 0xD4);
-    WaitForKeyboardData();
-    Hardware::WritePort(0x60 , 0xF4);
     Hardware::WritePort(0x64 , 0x20);
-    WaitForKeyboardData();
-    Data = Hardware::ReadPort(0x60);
-    Data |= 0x02;
+    Data = Hardware::ReadPort(0x60)|0x02;
     Hardware::WritePort(0x64 , 0x60);
-    WaitForKeyboardData();
     Hardware::WritePort(0x60 , Data);
-    __asm__ ("sti");
-    MouseController.Phase = 0;
+    Hardware::WritePort(0x64 , 0xD4);
+    Hardware::WritePort(0x60 , 0xF4);
+    Hardware::ReadPort(0x60);
 }
 
 void Hardware::Timer::Initialize(void) {
