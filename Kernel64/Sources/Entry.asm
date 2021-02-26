@@ -13,8 +13,8 @@ Entry:
     mov gs , ax
     mov ss , ax
 
-    mov rsp , 0x6FFFFE
-    mov rbp , 0x6FFFFE
+    mov rsp , 0x8FFFFE
+    mov rbp , 0x8FFFFE
 
     call Main
 
